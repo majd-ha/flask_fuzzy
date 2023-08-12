@@ -8,38 +8,6 @@ from bson.objectid import ObjectId
 
 from flask_cors import CORS
 from pymongo import MongoClient
-# db.execute(
-#     "create table if not exists hotels(name string , hotel_id integer , rate integer, total_pepole integer)")
-# def gettotal(id):
-#     db = sqlite3.connect("globdb.db")
-#     cr = db.cursor()
-#     cr.execute(f"select * from hotels where hotel_id={id}")
-#     hot = cr.fetchone()
-#     return hot[3]
-
-
-# def addrate(rate, id):
-#     db = sqlite3.connect("globdb.db")
-#     cr = db.cursor()
-#     cr.execute(
-#         f"update hotels set rate={rate},total_pepole=total_pepole+1 where hotel_id={id}")
-#     db.commit()
-#     db.close()
-
-
-# def fetchall():
-#     db = sqlite3.connect("globdb.db")
-#     cr = db.cursor()
-#     fin = []
-#     cr.execute("select * from hotels")
-#     data = cr.fetchall()
-
-#     for row in data:
-
-#         hotel = {'name': row[0], 'id': row[1], 'rate': row[2], 'total': row[3]}
-#         fin.append(hotel)
-#     db.close()
-#     return fin
 
 
 fuzzy_logic_app = Flask(__name__)
@@ -55,14 +23,14 @@ def singlerate(id):
     cumulative = res['cumulative']
     val = cumulative/res['total_submits']
     newvalues = {'$set': {'rate': val}}
-    filter = {'_id': ObjectId(id)}
+  
     collection.update_one(filter, newvalues)
     return val
 
 
-def addrate(rate, id):
+def addrate(rate, id,invnum):
 
-    newvalues = {'$inc': {'cumulative': rate, 'total_submits': 1}}
+    newvalues = {'$inc': {'cumulative': rate, 'total_submits': 1} ,'$push':{'invoices' : invnum} }
     filter = {'_id': ObjectId(id)}
     collection.update_one(filter, newvalues)
    # rating['_id'] = str(rating['_id'])
@@ -143,7 +111,7 @@ def homepage(hotel_id):
         | (food['foul'] & service['tolerable'] & price['expensive'] & (cleanliness['medium'] | cleanliness['clean']))
         | (food['foul'] & service['excellent'] & cleanliness['medium'] & price['expensive'])
         | ((food['good'] | food['delicious']) & service['notgood'] & (cleanliness['medium'] | cleanliness['clean']) & (price['expensive'] | price['suitable'])), evaluation['bad'])
-
+# medium
     rule3 = ctrl.Rule(((food['foul'] | food['good'] | food['delicious']) & service['notgood'] & (cleanliness['clean'] | cleanliness['medium']) & price['cheap'])
                       | (food['delicious'] & service['tolerable'] & cleanliness['medium'] & (price['cheap'] | price['expensive'] | price['suitable']))
                       | (food['delicious'] & service['tolerable'] & cleanliness['clean'] & (price['suitable'] | price['expensive']))
@@ -155,7 +123,7 @@ def homepage(hotel_id):
                       | (food['delicious'] & service['notgood'] & cleanliness['clean'] & price['suitable'])
                       | (food['delicious'] & service['excellent'] & cleanliness['medium'] & price['expensive']), evaluation['medium']
                       )
-
+# wonderful
     rule4 = ctrl.Rule((food['good'] & (service['tolerable'] | service['excellent']) & (cleanliness['clean'] | cleanliness['medium']) & price['cheap'])
                       | (food['good'] & (service['excellent'] | service['tolerable']) & cleanliness['clean'] & price['suitable'])
                       | (food['delicious'] & service['excellent'] & cleanliness['medium'] & (price['cheap'] | price['suitable']))
@@ -174,11 +142,10 @@ def homepage(hotel_id):
     rate_sys.input['price'] = float(req["price"])
     rate_sys.compute()
     rate_value = rate_sys.output['evaluation']
-    # hotelid = int(req['id'])
+   
     print(f'the rate is : {rate_value:.2f}')
-    # addrate(int(rate_value), hotelid)
-
-    addrate(rate_value, hotel_id)
+   
+    addrate(rate_value, hotel_id,req["invoice"])
     val1 = singlerate(hotel_id)
     # print(res)
 
