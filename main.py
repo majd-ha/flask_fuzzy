@@ -27,12 +27,23 @@ def getRate(id):
     collection.update_one(filter, newvalues)
     return val
 
+def checkinv(id,inv):
+  res=collection.find_one({'_id' : ObjectId(id)})
+  print(res['invoices'])
+  if inv in res['invoices']:
+      return False
+  else:
+      return True
+
+
+
 
 def addrate(rate, id,invnum):
-
+    
     newvalues = {'$inc': {'cumulative': rate, 'total_submits': 1} ,'$push':{'invoices' : invnum} }
     filter = {'_id': ObjectId(id)}
     collection.update_one(filter, newvalues)
+    
  
 
 
@@ -144,9 +155,13 @@ def homepage(hotel_id):
     rate_value = rate_sys.output['evaluation']
    
     print(f'the rate is : {rate_value:.2f}')
-   
-    addrate(rate_value, hotel_id,req["invoice"])
-    val1 = getRate(hotel_id)
+    if(checkinv(hotel_id,req['invoice'])):
+        addrate(rate_value, hotel_id,req["invoice"])
+        val1 = getRate(hotel_id)
+    else:
+         return {"err" : "duplicated invoice number"}
+    
+    
     # print(res)
 
     return {"your rate": rate_value, "current rate": val1}
