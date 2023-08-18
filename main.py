@@ -17,7 +17,7 @@ db = client['hotelsDb']
 collection = db['hotels']
 
 
-def singlerate(id):
+def getRate(id):
     filter = {'_id': ObjectId(id)}
     res = collection.find_one(filter)
     cumulative = res['cumulative']
@@ -33,7 +33,7 @@ def addrate(rate, id,invnum):
     newvalues = {'$inc': {'cumulative': rate, 'total_submits': 1} ,'$push':{'invoices' : invnum} }
     filter = {'_id': ObjectId(id)}
     collection.update_one(filter, newvalues)
-   # rating['_id'] = str(rating['_id'])
+ 
 
 
 @fuzzy_logic_app.route("/", methods=["GET"])
@@ -146,7 +146,7 @@ def homepage(hotel_id):
     print(f'the rate is : {rate_value:.2f}')
    
     addrate(rate_value, hotel_id,req["invoice"])
-    val1 = singlerate(hotel_id)
+    val1 = getRate(hotel_id)
     # print(res)
 
     return {"your rate": rate_value, "current rate": val1}
